@@ -1,0 +1,17 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "DOCFLOW_MODE": "mock",
+    "DOCFLOW_QUEUE_NAME": "docflow-jobs",
+    "DOCUMENT_INTELLIGENCE_ENDPOINT": "https://<your-di>.cognitiveservices.azure.com/",
+    "DOCUMENT_INTELLIGENCE_KEY": "",
+    "AZURE_OPENAI_ENDPOINT": "https://<your-aoai>.openai.azure.com/",
+    "AZURE_OPENAI_KEY": "",
+    "AZURE_OPENAI_CHAT_DEPLOYMENT": "gpt-4o-mini",
+    "AZURE_OPENAI_EMBEDDING_DEPLOYMENT": "text-embedding-3-small",
+    "AZURE_SEARCH_ENDPOINT": "https://<your-search>.search.windows.net",
+    "AZURE_SEARCH_KEY": ""
+  }
+}

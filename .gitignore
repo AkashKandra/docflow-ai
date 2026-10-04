@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+local.settings.json
+.local_data/
+.pytest_cache/
+.ruff_cache/
+.python_packages/
+.vscode/
+samples/generated/
+eval_report.json

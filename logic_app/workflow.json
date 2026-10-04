@@ -1,0 +1,88 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "$connections": { "defaultValue": {}, "type": "Object" },
+      "functionBaseUrl": { "type": "String", "defaultValue": "https://<your-function-app>.azurewebsites.net" },
+      "functionKey": { "type": "SecureString" },
+      "mailbox": { "type": "String", "defaultValue": "invoices@yourdomain.com" }
+    },
+    "triggers": {
+      "When_a_new_email_arrives_in_a_shared_mailbox": {
+        "type": "ApiConnection",
+        "recurrence": { "frequency": "Minute", "interval": 2 },
+        "inputs": {
+          "host": { "connection": { "name": "@parameters('$connections')['office365']['connectionId']" } },
+          "method": "get",
+          "path": "/v2/SharedMailbox/Mail/OnNewEmail",
+          "queries": {
+            "mailboxAddress": "@parameters('mailbox')",
+            "folderPath": "Inbox",
+            "importance": "Any",
+            "fetchOnlyWithAttachment": true,
+            "includeAttachments": true
+          }
+        }
+      }
+    },
+    "actions": {
+      "Keep_supported_attachments": {
+        "type": "Query",
+        "runAfter": {},
+        "inputs": {
+          "from": "@triggerBody()?['attachments']",
+          "where": "@contains(createArray('application/pdf','image/jpeg','image/png','image/tiff'), toLower(item()?['contentType']))"
+        }
+      },
+      "Shape_documents": {
+        "type": "Select",
+        "runAfter": { "Keep_supported_attachments": ["Succeeded"] },
+        "inputs": {
+          "from": "@body('Keep_supported_attachments')",
+          "select": {
+            "filename": "@item()?['name']",
+            "content_type": "@toLower(item()?['contentType'])",
+            "content_base64": "@item()?['contentBytes']",
+            "source": {
+              "sender": "@triggerBody()?['from']",
+              "subject": "@triggerBody()?['subject']",
+              "message_id": "@triggerBody()?['id']"
+            }
+          }
+        }
+      },
+      "Anything_to_process": {
+        "type": "If",
+        "runAfter": { "Shape_documents": ["Succeeded"] },
+        "expression": { "and": [ { "greater": [ "@length(body('Shape_documents'))", 0 ] } ] },
+        "actions": {
+          "Submit_to_DocFlow_API": {
+            "type": "Http",
+            "inputs": {
+              "method": "POST",
+              "uri": "@{parameters('functionBaseUrl')}/api/documents",
+              "headers": { "x-functions-key": "@parameters('functionKey')", "Content-Type": "application/json" },
+              "body": { "documents": "@body('Shape_documents')" },
+              "retryPolicy": { "type": "exponential", "count": 4, "interval": "PT10S" }
+            }
+          },
+          "Mark_email_as_read": {
+            "type": "Http",
+            "runAfter": { "Submit_to_DocFlow_API": ["Succeeded"] },
+            "inputs": {
+              "method": "PATCH",
+              "uri": "https://graph.microsoft.com/v1.0/users/@{parameters('mailbox')}/messages/@{triggerBody()?['id']}",
+              "headers": { "Content-Type": "application/json" },
+              "body": { "isRead": true },
+              "authentication": { "type": "ManagedServiceIdentity", "audience": "https://graph.microsoft.com" }
+            }
+          }
+        },
+        "else": { "actions": {} }
+      }
+    },
+    "outputs": {}
+  },
+  "parameters": {}
+}

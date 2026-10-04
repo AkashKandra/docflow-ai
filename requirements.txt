@@ -1,0 +1,12 @@
+azure-functions>=1.20
+azure-ai-documentintelligence>=1.0.0
+azure-search-documents>=11.6.0
+azure-storage-blob>=12.19
+azure-storage-queue>=12.9
+azure-data-tables>=12.5
+azure-identity>=1.17
+openai>=1.40
+langgraph>=0.2
+pydantic>=2.6
+msal>=1.28
+requests>=2.32
